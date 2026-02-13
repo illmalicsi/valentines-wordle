@@ -20,7 +20,7 @@ export const WordleGrid: React.FC<WordleGridProps> = ({
   const rows = Array.from({ length: maxAttempts });
 
   return (
-    <div className={`flex flex-col gap-2 sm:gap-3 stable-transform w-full ${isMessageMode ? 'items-center' : ''}`}>
+    <div className={`flex flex-col gap-1.5 sm:gap-2.5 stable-transform w-full ${isMessageMode ? 'items-center' : ''}`}>
       {rows.map((_, i) => (
         <Row 
           key={i} 
@@ -43,7 +43,7 @@ const Row: React.FC<{
   const cells = Array.from({ length: 5 });
 
   return (
-    <div className="flex gap-2 sm:gap-3 justify-center w-full">
+    <div className="flex gap-1.5 sm:gap-2.5 justify-center w-full">
       {cells.map((_, i) => {
         let status: LetterStatus = 'empty';
         const char = guess[i] || '';
@@ -67,22 +67,22 @@ const Cell: React.FC<{ char: string; status: LetterStatus; isMessageMode?: boole
   
   if (isMessageMode) {
     if (char && char !== ' ') {
-      style = "bg-rose-500 border-rose-600 text-white shadow-lg shadow-rose-200/50 scale-110";
+      style = "bg-rose-500 border-rose-600 text-white shadow-sm scale-105";
     } else {
       style = "bg-transparent border-transparent opacity-0";
     }
   } else if (status === 'correct') {
-    style = "bg-rose-500 border-rose-600 text-white shadow-inner";
+    style = "bg-rose-500 border-rose-600 text-white";
   } else if (status === 'present') {
     style = "bg-amber-100 border-amber-300 text-amber-800";
   } else if (status === 'absent') {
-    style = "bg-slate-100 border-slate-200 text-slate-400 opacity-60";
+    style = "bg-slate-50 border-slate-200 text-slate-300 opacity-50";
   } else if (char) {
     style = "bg-white border-rose-300 text-rose-900 animate-pop border-2";
   }
 
   return (
-    <div className={`w-12 h-12 sm:w-14 sm:h-14 border-2 rounded-xl flex items-center justify-center font-bold text-xl sm:text-2xl transition-all duration-500 transform-gpu ${style} stable-transform flex-shrink-0 aspect-square select-none uppercase`}>
+    <div className={`w-11 h-11 sm:w-14 sm:h-14 border rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-lg sm:text-2xl transition-all duration-300 transform-gpu ${style} stable-transform flex-shrink-0 aspect-square select-none uppercase`}>
       {char}
     </div>
   );

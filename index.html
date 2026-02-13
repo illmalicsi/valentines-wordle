@@ -14,7 +14,7 @@
     <meta name="theme-color" content="#f43f5e">
 
     <!-- Favicon -->
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌹</text></svg>">
 
     <!-- Tailwind CDN with Config -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -42,9 +42,10 @@
                         sans: ['Inter', 'sans-serif'],
                     },
                     animation: {
-                        'bounce-short': 'bounce 1s ease-in-out 2',
+                        'bounce-short': 'bounce 1.2s ease-in-out 2',
                         'pop': 'pop 0.15s ease-out',
                         'fadeIn': 'fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'spin-slow': 'spin 8s linear infinite',
                     },
                     keyframes: {
                         pop: {
@@ -53,7 +54,7 @@
                             '100%': { transform: 'scale(1)' },
                         },
                         fadeIn: {
-                            from: { opacity: '0', transform: 'translateY(20px)' },
+                            from: { opacity: '0', transform: 'translateY(15px)' },
                             to: { opacity: '1', transform: 'translateY(0)' },
                         }
                     }
@@ -69,7 +70,9 @@
     
     <style>
         body {
-            background: radial-gradient(circle at top, #fff5f7 0%, #ffe4e9 100%);
+            background-color: #fff5f7;
+            background-image: radial-gradient(#ffe4e9 1px, transparent 1px);
+            background-size: 30px 30px;
             min-height: 100vh;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
@@ -85,26 +88,29 @@
         }
         @keyframes float {
             0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.6; }
-            90% { opacity: 0.6; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
             100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
         }
-        .heart {
+        .float-item {
             position: absolute;
             bottom: -50px;
-            color: #ffb3c1;
             animation: float 12s linear infinite;
             will-change: transform;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
-            box-shadow: 0 10px 40px -10px rgba(244, 63, 94, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            box-shadow: 0 10px 40px -10px rgba(244, 63, 94, 0.12);
         }
         .stable-transform {
             backface-visibility: hidden;
             transform: translateZ(0);
+        }
+        .floral-accent {
+            pointer-events: none;
+            opacity: 0.4;
         }
     </style>
     <script type="importmap">

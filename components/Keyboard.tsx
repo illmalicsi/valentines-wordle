@@ -36,9 +36,9 @@ export const Keyboard: React.FC<KeyboardProps> = ({
   };
 
   return (
-    <div className={`w-full space-y-2 px-1 max-w-lg mx-auto stable-transform ${disabled ? 'opacity-30 pointer-events-none' : ''}`}>
+    <div className={`w-full space-y-1.5 sm:space-y-2 px-0.5 max-w-md mx-auto stable-transform ${disabled ? 'opacity-30 pointer-events-none' : ''}`}>
       {KEYBOARD_ROWS.map((row, i) => (
-        <div key={i} className="flex justify-center gap-1.5 sm:gap-2">
+        <div key={i} className="flex justify-center gap-1 sm:gap-1.5">
           {row.map(key => (
             <Key 
               key={key} 
@@ -60,28 +60,28 @@ const Key: React.FC<{ label: string; status: LetterStatus; onClick: () => void; 
   onClick,
   isHighlighted = false
 }) => {
-  let style = "bg-white text-rose-700 border-rose-100";
-  let width = "flex-1";
+  let style = "bg-white text-rose-700 border-rose-50 shadow-sm";
+  let width = "flex-1 min-w-0";
   
   if (label === 'ENTER' || label === 'BACKSPACE') {
-    width = "px-4 sm:px-6 flex-initial";
-    style = "bg-rose-50 text-rose-500 border-rose-200 text-[10px] sm:text-xs";
+    width = "px-2 sm:px-4 flex-initial";
+    style = "bg-rose-50 text-rose-600 border-rose-100 text-[8px] sm:text-[10px]";
   }
 
   if (isHighlighted) {
-    style = "bg-rose-500 text-white border-rose-600 shadow-md scale-105";
+    style = "bg-rose-500 text-white border-rose-600 shadow-md scale-105 z-10";
   } else if (status === 'correct') {
     style = "bg-rose-500 text-white border-rose-600";
   } else if (status === 'present') {
     style = "bg-amber-100 text-amber-700 border-amber-200";
   } else if (status === 'absent') {
-    style = "bg-slate-50 text-slate-300 border-slate-100";
+    style = "bg-slate-100 text-slate-400 border-slate-100 opacity-60";
   }
 
   return (
     <button
       onClick={onClick}
-      className={`h-12 sm:h-14 rounded-2xl font-bold flex items-center justify-center border transition-all active:scale-90 hover:brightness-95 shadow-sm transform-gpu ${width} ${style} stable-transform uppercase`}
+      className={`h-11 sm:h-14 rounded-lg sm:rounded-xl font-bold flex items-center justify-center border transition-all active:scale-90 hover:brightness-95 transform-gpu ${width} ${style} stable-transform uppercase`}
     >
       {label === 'BACKSPACE' ? '⌫' : label}
     </button>
