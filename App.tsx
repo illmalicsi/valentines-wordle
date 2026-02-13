@@ -8,8 +8,9 @@ import { CelebrationView } from './components/CelebrationView';
 import { HowToPlay } from './components/HowToPlay';
 import { TARGET_WORD, MAX_ATTEMPTS, WORD_LENGTH, QUIT_PHRASES } from './constants';
 import { AppStage } from './types';
+import { GoogleGenAI } from "@google/genai";
 
-const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'back' | 'enter' | 'correct') => {
+const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'back' | 'enter' | 'correct' | 'error') => {
   const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -25,6 +26,14 @@ const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'bac
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
       osc.start(now);
       osc.stop(now + 0.05);
+      break;
+    case 'error':
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, now);
+      gain.gain.setValueAtTime(0.02, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.start(now);
+      osc.stop(now + 0.2);
       break;
     case 'back':
       osc.type = 'sine';
@@ -44,7 +53,7 @@ const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'bac
       break;
     case 'correct':
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, now); // C5
+      osc.frequency.setValueAtTime(523.25, now);
       gain.gain.setValueAtTime(0.04, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
       osc.start(now);
@@ -52,7 +61,7 @@ const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'bac
       break;
     case 'present':
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(392.00, now); // G4
+      osc.frequency.setValueAtTime(392.00, now);
       gain.gain.setValueAtTime(0.03, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
       osc.start(now);
@@ -60,7 +69,7 @@ const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'bac
       break;
     case 'absent':
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(220.00, now); // A3
+      osc.frequency.setValueAtTime(220.00, now);
       gain.gain.setValueAtTime(0.02, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
       osc.start(now);
@@ -88,8 +97,29 @@ const App: React.FC = () => {
   const [animatingLettersCount, setAnimatingLettersCount] = useState(0);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   
-  // Track submission to prevent double-submit during auto-check window
   const isSubmitting = useRef(false);
+  const wordCache = useRef<Record<string, boolean>>({ [TARGET_WORD]: true });
+
+  const validateWord = async (word: string): Promise<boolean> => {
+    if (wordCache.current[word] !== undefined) return wordCache.current[word];
+    
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Is "${word}" a valid 5-letter English word? Answer with only TRUE or FALSE.`,
+        config: {
+          temperature: 0,
+        }
+      });
+      const isValid = response.text?.trim().toUpperCase().includes('TRUE') ?? false;
+      wordCache.current[word] = isValid;
+      return isValid;
+    } catch (error) {
+      console.error("Validation error:", error);
+      return true; // Fallback to allow play if API fails
+    }
+  };
 
   const resetGame = useCallback(() => {
     setGuesses([]);
@@ -127,7 +157,7 @@ const App: React.FC = () => {
     }, 3000);
   }, [startProposalAnimation]);
 
-  const submitGuess = useCallback((guessToSubmit: string) => {
+  const submitGuess = useCallback(async (guessToSubmit: string) => {
     if (!guessToSubmit || isSubmitting.current) return;
     
     const upperGuess = guessToSubmit.toUpperCase();
@@ -143,6 +173,20 @@ const App: React.FC = () => {
     }
 
     isSubmitting.current = true;
+    setMessage('Checking word...');
+    
+    const isValid = await validateWord(upperGuess);
+    
+    if (!isValid) {
+      setMessage('Not in word list');
+      playSound('error');
+      isSubmitting.current = false;
+      // Clear message after a short delay
+      setTimeout(() => setMessage(null), 1500);
+      return;
+    }
+
+    setMessage(null);
     playSound('enter');
     
     upperGuess.split('').forEach((char, i) => {
@@ -192,8 +236,8 @@ const App: React.FC = () => {
         
         if (nextGuess.length === WORD_LENGTH) {
           const isPartOfQuit = QUIT_PHRASES.some(phrase => phrase.startsWith(nextGuess));
-          
           if (!isPartOfQuit) {
+            // Give user a split second to see the 5th letter before auto-submitting
             setTimeout(() => {
               setCurrentGuess(prev => {
                 if (prev.length === WORD_LENGTH) {
@@ -262,7 +306,6 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[100dvh] w-full max-w-lg mx-auto stable-transform text-rose-900 px-4 py-8 overflow-hidden">
-      {/* Help Icon Button */}
       {(stage === 'playing') && (
         <button 
           onClick={() => setShowHowToPlay(true)}
@@ -339,7 +382,7 @@ const App: React.FC = () => {
               onKeyPress={onKeyPress} 
               guesses={guesses} 
               targetWord={TARGET_WORD} 
-              disabled={stage !== 'playing' || !!message}
+              disabled={stage !== 'playing' || (!!message && message !== 'Checking word...')}
             />
           </footer>
         </div>
