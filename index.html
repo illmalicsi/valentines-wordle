@@ -4,22 +4,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
-    <title>Valentine's Wordle</title>
+    <title>Valentine's Wordle | A Secret Word</title>
+    
+    <!-- SEO & Social Sharing -->
+    <meta name="description" content="A whimsical Valentine's Wordle. Can you guess the secret word of the heart?">
+    <meta property="og:title" content="Valentine's Wordle">
+    <meta property="og:description" content="A romantic puzzle for someone special. Guess the word to reveal a surprise.">
+    <meta property="og:type" content="website">
+    <meta name="theme-color" content="#f43f5e">
+
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>">
+
+    <!-- Tailwind CDN with Config -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rose: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fda4af',
+                            400: '#fb7185',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                            800: '#9f1239',
+                            900: '#881337',
+                        },
+                    },
+                    fontFamily: {
+                        romantic: ['Playfair Display', 'serif'],
+                        script: ['Dancing Script', 'cursive'],
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-short': 'bounce 1s ease-in-out 2',
+                        'pop': 'pop 0.15s ease-out',
+                        'fadeIn': 'fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                    },
+                    keyframes: {
+                        pop: {
+                            '0%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.1)' },
+                            '100%': { transform: 'scale(1)' },
+                        },
+                        fadeIn: {
+                            from: { opacity: '0', transform: 'translateY(20px)' },
+                            to: { opacity: '1', transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,700;1,700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <style>
         body {
-            font-family: 'Inter', sans-serif;
             background: radial-gradient(circle at top, #fff5f7 0%, #ffe4e9 100%);
             min-height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
-        }
-        .font-romantic {
-            font-family: 'Playfair Display', serif;
-        }
-        .font-script {
-            font-family: 'Dancing Script', cursive;
         }
         #heart-container {
             position: fixed;
@@ -42,50 +95,33 @@
             color: #ffb3c1;
             animation: float 12s linear infinite;
             will-change: transform;
-            pointer-events: none;
         }
         .glass-card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 8px 32px 0 rgba(255, 182, 193, 0.2);
-        }
-        .flip-cell {
-            transition: transform 0.6s;
-            transform-style: preserve-3d;
-        }
-        .animate-pop {
-            animation: pop 0.15s ease-out;
-        }
-        @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        .animate-fadeIn {
-            animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 10px 40px -10px rgba(244, 63, 94, 0.15);
         }
         .stable-transform {
             backface-visibility: hidden;
             transform: translateZ(0);
         }
     </style>
-<script type="importmap">
+    <script type="importmap">
 {
   "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4"
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4"
   }
 }
 </script>
 </head>
-<body class="antialiased text-rose-900">
+<body class="antialiased text-rose-900 selection:bg-rose-200">
     <div id="heart-container"></div>
     <div id="root" class="relative z-10"></div>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

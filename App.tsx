@@ -47,7 +47,7 @@ const App: React.FC = () => {
 
     if (key === 'ENTER') {
       const upperGuess = currentGuess.toUpperCase();
-      if (QUIT_PHRASES.some(phrase => upperGuess.includes(phrase))) {
+      if (QUIT_PHRASES.some(phrase => upperGuess === phrase)) {
         triggerChoice();
         return;
       }
@@ -94,7 +94,7 @@ const App: React.FC = () => {
       heart.style.left = Math.random() * 100 + 'vw';
       heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
       heart.style.animationDuration = (Math.random() * 4 + 8) + 's';
-      heart.style.opacity = (Math.random() * 0.5 + 0.2).toString();
+      heart.style.opacity = (Math.random() * 0.4 + 0.1).toString();
       container.appendChild(heart);
       setTimeout(() => heart.remove(), 12000);
     };
@@ -112,17 +112,17 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-full p-4 sm:p-8 max-w-2xl mx-auto relative overflow-hidden transition-all duration-500">
+    <div className="flex flex-col items-center justify-start min-h-screen w-full p-4 sm:p-8 max-w-2xl mx-auto relative overflow-y-auto stable-transform">
       {(stage === 'playing' || stage === 'proposal-animating') && (
-        <div className="flex flex-col items-center w-full max-w-md animate-fadeIn">
-          <header className="mb-8 text-center space-y-1">
+        <div className="flex flex-col items-center w-full max-w-md animate-fadeIn pt-4">
+          <header className="mb-6 sm:mb-10 text-center space-y-1">
             <h1 className="text-4xl sm:text-6xl font-romantic text-rose-600 tracking-tight">
               A Secret <span className="font-script text-rose-400">Word</span>
             </h1>
             <p className="text-rose-400 font-medium tracking-widest text-[10px] sm:text-xs uppercase">Valentine's Edition</p>
           </header>
 
-          <div className="w-full glass-card p-6 sm:p-8 rounded-3xl mb-8">
+          <div className="w-full glass-card p-4 sm:p-8 rounded-[2rem] sm:rounded-3xl mb-6 shadow-lg">
             <WordleGrid 
               guesses={stage === 'proposal-animating' ? getAnimatedWords() : guesses} 
               currentGuess={stage === 'proposal-animating' ? '' : currentGuess} 
@@ -132,15 +132,15 @@ const App: React.FC = () => {
             />
           </div>
 
-          <div className="h-6 mb-4">
+          <div className="h-8 flex items-center justify-center mb-4">
             {message && stage === 'playing' && (
-              <div className="text-rose-500 text-sm font-semibold tracking-wide animate-bounce">
+              <div className="bg-rose-50 border border-rose-100 px-4 py-1 rounded-full text-rose-500 text-xs sm:text-sm font-semibold tracking-wide shadow-sm animate-bounce">
                 {message}
               </div>
             )}
           </div>
 
-          <div className="w-full">
+          <div className="w-full mt-auto">
             <Keyboard 
               onKeyPress={onKeyPress} 
               guesses={guesses} 
@@ -152,22 +152,28 @@ const App: React.FC = () => {
       )}
 
       {stage === 'choice' && (
-        <ChoiceView 
-          onContinue={() => setStage('playing')} 
-          onGiveUp={startProposalAnimation} 
-        />
+        <div className="flex items-center justify-center min-h-[80vh]">
+          <ChoiceView 
+            onContinue={() => setStage('playing')} 
+            onGiveUp={startProposalAnimation} 
+          />
+        </div>
       )}
 
       {stage === 'proposal-input' && (
-        <ProposalView 
-          onAccepted={() => setStage('celebration')} 
-          guesses={[]} 
-          targetWord={TARGET_WORD}
-        />
+        <div className="flex items-center justify-center min-h-[90vh] w-full">
+          <ProposalView 
+            onAccepted={() => setStage('celebration')} 
+            guesses={[]} 
+            targetWord={TARGET_WORD}
+          />
+        </div>
       )}
 
       {stage === 'celebration' && (
-        <CelebrationView onReset={resetGame} />
+        <div className="flex items-center justify-center min-h-[90vh]">
+          <CelebrationView onReset={resetGame} />
+        </div>
       )}
     </div>
   );
