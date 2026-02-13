@@ -58,24 +58,39 @@ const Row: React.FC<{
           else status = 'absent';
         }
 
-        return <Cell key={i} char={char} status={status} isMessageMode={isMessageMode} isCurrentCell={isActiveRow && i === guess.length} />;
+        return (
+          <Cell 
+            key={i} 
+            index={i}
+            char={char} 
+            status={status} 
+            isFinal={isFinal}
+            isMessageMode={isMessageMode} 
+            isCurrentCell={isActiveRow && i === guess.length} 
+          />
+        );
       })}
     </div>
   );
 };
 
-const Cell: React.FC<{ char: string; status: LetterStatus; isMessageMode?: boolean; isCurrentCell?: boolean }> = ({ char, status, isMessageMode, isCurrentCell }) => {
+const Cell: React.FC<{ 
+  char: string; 
+  status: LetterStatus; 
+  index: number;
+  isFinal: boolean;
+  isMessageMode?: boolean; 
+  isCurrentCell?: boolean 
+}> = ({ char, status, index, isFinal, isMessageMode, isCurrentCell }) => {
   let style = "bg-transparent border-rose-200 text-rose-900";
   
   if (isMessageMode) {
     if (char && char !== ' ') {
-      // Final proposal letters remain deep rose for the romantic feel
       style = "bg-rose-600 border-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.3)] scale-105";
     } else {
       style = "opacity-0";
     }
   } else if (status === 'correct') {
-    // Correct Wordle guesses now use standard emerald green
     style = "bg-emerald-600 border-emerald-600 text-white shadow-sm";
   } else if (status === 'present') {
     style = "bg-amber-400 border-amber-400 text-white shadow-sm";
@@ -87,8 +102,14 @@ const Cell: React.FC<{ char: string; status: LetterStatus; isMessageMode?: boole
     style = "bg-white border-rose-500 ring-4 ring-rose-100/50 shadow-[0_0_15px_rgba(225,29,72,0.15)] animate-pulse";
   }
 
+  // Stagger the reveal transition to match sound timing
+  const transitionDelay = isFinal && !isMessageMode ? `${index * 200 + 300}ms` : '0ms';
+
   return (
-    <div className={`aspect-square w-full border-2 rounded-lg flex items-center justify-center font-bold text-base sm:text-2xl transition-all duration-300 transform-gpu ${style} select-none uppercase`}>
+    <div 
+      style={{ transitionDelay }}
+      className={`aspect-square w-full border-2 rounded-lg flex items-center justify-center font-bold text-base sm:text-2xl transition-all duration-300 transform-gpu ${style} select-none uppercase`}
+    >
       {char}
     </div>
   );

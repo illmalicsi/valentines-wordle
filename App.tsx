@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { WordleGrid } from './components/WordleGrid';
 import { Keyboard } from './components/Keyboard';
 import { ChoiceView } from './components/ChoiceView';
@@ -8,7 +8,7 @@ import { CelebrationView } from './components/CelebrationView';
 import { TARGET_WORD, MAX_ATTEMPTS, WORD_LENGTH, QUIT_PHRASES } from './constants';
 import { AppStage } from './types';
 
-const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'back') => {
+const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'back' | 'enter' | 'correct') => {
   const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
@@ -19,19 +19,51 @@ const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'bac
   switch (type) {
     case 'tap':
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(600, now);
-      gain.gain.setValueAtTime(0.04, now);
+      osc.frequency.setValueAtTime(800, now);
+      gain.gain.setValueAtTime(0.02, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
       osc.start(now);
       osc.stop(now + 0.05);
       break;
     case 'back':
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(450, now);
-      gain.gain.setValueAtTime(0.04, now);
+      osc.frequency.setValueAtTime(400, now);
+      gain.gain.setValueAtTime(0.02, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
       osc.start(now);
       osc.stop(now + 0.05);
+      break;
+    case 'enter':
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      gain.gain.setValueAtTime(0.03, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      osc.start(now);
+      osc.stop(now + 0.1);
+      break;
+    case 'correct':
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); // C5
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.start(now);
+      osc.stop(now + 0.2);
+      break;
+    case 'present':
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(392.00, now); // G4
+      gain.gain.setValueAtTime(0.03, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.start(now);
+      osc.stop(now + 0.2);
+      break;
+    case 'absent':
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220.00, now); // A3
+      gain.gain.setValueAtTime(0.02, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.start(now);
+      osc.stop(now + 0.2);
       break;
     case 'success':
       osc.type = 'sine';
@@ -41,14 +73,6 @@ const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'bac
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
       osc.start(now);
       osc.stop(now + 0.3);
-      break;
-    case 'present':
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(220, now);
-      gain.gain.setValueAtTime(0.03, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-      osc.start(now);
-      osc.stop(now + 0.1);
       break;
   }
 };
@@ -61,6 +85,9 @@ const App: React.FC = () => {
   const [currentGuess, setCurrentGuess] = useState<string>('');
   const [message, setMessage] = useState<string | null>(null);
   const [animatingLettersCount, setAnimatingLettersCount] = useState(0);
+  
+  // Track submission to prevent double-submit during auto-check window
+  const isSubmitting = useRef(false);
 
   const resetGame = useCallback(() => {
     setGuesses([]);
@@ -68,19 +95,19 @@ const App: React.FC = () => {
     setMessage(null);
     setAnimatingLettersCount(0);
     setStage('playing');
+    isSubmitting.current = false;
   }, []);
 
   const startProposalAnimation = useCallback(() => {
     setStage('proposal-animating');
     let count = 0;
     const totalLetters = PROPOSAL_WORDS.join('').length;
-    // Slower typing speed (100ms per character) for a romantic, readable pace
     const interval = setInterval(() => {
       count++;
       setAnimatingLettersCount(count);
+      if (count % 2 === 0) playSound('tap');
       if (count >= totalLetters) {
         clearInterval(interval);
-        // Pause at the end of the full sentence before transitioning to the input view
         setTimeout(() => setStage('proposal-input'), 1500);
       }
     }, 100);
@@ -92,17 +119,18 @@ const App: React.FC = () => {
     setStage('playing'); 
     setMessage(`The secret word was ${TARGET_WORD} ❤️`);
     
-    // Show the word for 3 seconds so the user can actually read it
     setTimeout(() => {
       setMessage(null);
-      // Brief aesthetic pause before the final proposal animation starts
       setTimeout(startProposalAnimation, 1000);
     }, 3000);
   }, [startProposalAnimation]);
 
   const submitGuess = useCallback((guessToSubmit: string) => {
+    if (!guessToSubmit || isSubmitting.current) return;
+    
     const upperGuess = guessToSubmit.toUpperCase();
     
+    // Allow quit phrases even if they don't match WORD_LENGTH (handled by manual Enter usually)
     if (QUIT_PHRASES.some(phrase => upperGuess === phrase)) {
       triggerChoice();
       return;
@@ -113,20 +141,38 @@ const App: React.FC = () => {
       return;
     }
 
+    isSubmitting.current = true;
+    playSound('enter');
+    
+    upperGuess.split('').forEach((char, i) => {
+      setTimeout(() => {
+        if (char === TARGET_WORD[i]) playSound('correct');
+        else if (TARGET_WORD.includes(char)) playSound('present');
+        else playSound('absent');
+      }, i * 200 + 300);
+    });
+
     const newGuesses = [...guesses, upperGuess];
     setGuesses(newGuesses);
     setCurrentGuess('');
     
-    if (upperGuess === TARGET_WORD) {
-      playSound('success');
-      setTimeout(startProposalAnimation, 1500);
-    } else if (newGuesses.length >= MAX_ATTEMPTS) {
-      setTimeout(triggerChoice, 1200);
-    }
+    const isWin = upperGuess === TARGET_WORD;
+    const isGameOver = newGuesses.length >= MAX_ATTEMPTS;
+
+    setTimeout(() => {
+      isSubmitting.current = false;
+      if (isWin) {
+        playSound('success');
+        setTimeout(startProposalAnimation, 1500);
+      } else if (isGameOver) {
+        setTimeout(triggerChoice, 1000);
+      }
+    }, WORD_LENGTH * 200 + 400);
+
   }, [guesses, triggerChoice, startProposalAnimation]);
 
   const onKeyPress = useCallback((key: string) => {
-    if (stage !== 'playing') return;
+    if (stage !== 'playing' || isSubmitting.current) return;
     setMessage(null);
 
     if (key === 'ENTER') {
@@ -137,14 +183,31 @@ const App: React.FC = () => {
         setCurrentGuess(prev => prev.slice(0, -1));
       }
     } else if (/^[A-Z ]$/.test(key)) {
-      if (currentGuess.length < WORD_LENGTH) {
+      // Allow typing a bit more for QUIT_PHRASES if needed, 
+      // but standard auto-submit triggers at WORD_LENGTH
+      if (currentGuess.length < 10) { 
         const nextChar = key.toUpperCase();
         const nextGuess = currentGuess + nextChar;
         setCurrentGuess(nextGuess);
         playSound('tap');
         
+        // AUTO-SUBMIT LOGIC
         if (nextGuess.length === WORD_LENGTH) {
-          setTimeout(() => submitGuess(nextGuess), 400);
+          // Check if it's a part of a quit phrase before auto-submitting
+          const isPartOfQuit = QUIT_PHRASES.some(phrase => phrase.startsWith(nextGuess));
+          
+          // If it's not looking like a quit phrase, auto-submit
+          if (!isPartOfQuit) {
+            setTimeout(() => {
+              // Re-check current state to ensure backspace wasn't pressed during delay
+              setCurrentGuess(prev => {
+                if (prev.length === WORD_LENGTH) {
+                  submitGuess(prev);
+                }
+                return prev;
+              });
+            }, 400);
+          }
         }
       }
     }
