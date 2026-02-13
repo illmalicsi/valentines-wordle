@@ -309,11 +309,11 @@ const App: React.FC = () => {
       {(stage === 'playing') && (
         <button 
           onClick={() => setShowHowToPlay(true)}
-          className="fixed top-6 right-6 w-10 h-10 bg-white/80 backdrop-blur-sm border border-rose-100 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all text-rose-400 hover:text-rose-600 z-40 group cursor-pointer"
+          className="fixed top-6 right-6 w-10 h-10 bg-white border border-rose-100 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all text-rose-300 hover:text-rose-600 z-40 group cursor-pointer animate-float-soft"
           title="How to play"
         >
           <span className="text-xl font-bold">?</span>
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-400 rounded-full animate-pulse opacity-0 group-hover:opacity-100 transition-opacity"></div>
         </button>
       )}
 
@@ -321,7 +321,7 @@ const App: React.FC = () => {
 
       {(stage === 'playing' || stage === 'proposal-animating') && (
         <div className="flex flex-col items-center justify-center w-full animate-fadeIn space-y-6 sm:space-y-8">
-          <header className="flex flex-col items-center w-full relative">
+          <header className="flex flex-col items-center w-full relative animate-float-header">
             <div className="relative group cursor-default flex flex-col items-center">
               <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center">
                 <div className="absolute inset-0 animate-spin-slow" style={{ animationDuration: '30s' }}>
@@ -329,36 +329,34 @@ const App: React.FC = () => {
                     <path id="circlePath" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="transparent" />
                     <text className="seal-text">
                       <textPath xlinkHref="#circlePath">
-                        Love Wordle • Boutique Edition • 2025 •
+                        Love Wordle • Sweetheart Edition • Forever •
                       </textPath>
                     </text>
                   </svg>
                 </div>
-                <div className="absolute inset-2 border-2 border-dashed border-rose-200/40 rounded-full animate-spin-reverse" style={{ animationDuration: '45s' }}></div>
-                <div className="w-14 h-14 sm:w-18 sm:h-18 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full shadow-2xl flex items-center justify-center border border-white/30 transform transition-transform duration-500 relative z-10 overflow-hidden group-hover:scale-110">
-                   <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none"></div>
+                <div className="absolute inset-2 border-2 border-dashed border-rose-100/40 rounded-full animate-spin-reverse" style={{ animationDuration: '45s' }}></div>
+                <div className="w-14 h-14 sm:w-18 sm:h-18 bg-white rounded-full shadow-2xl flex items-center justify-center border border-rose-50 transform transition-transform duration-500 relative z-10 overflow-hidden group-hover:scale-110">
                    <div className="flex items-baseline relative">
-                      <span className="text-white text-3xl sm:text-4xl font-romantic tracking-tighter drop-shadow-md select-none font-bold">L</span>
-                      <span className="text-rose-200 text-2xl sm:text-3xl font-romantic tracking-tighter drop-shadow-md select-none -ml-1 italic">W</span>
+                      <span className="text-rose-600 text-3xl sm:text-4xl font-romantic tracking-tighter select-none font-bold">L</span>
+                      <span className="text-rose-300 text-2xl sm:text-3xl font-romantic tracking-tighter select-none -ml-1 italic">W</span>
                    </div>
-                   <div className="absolute bottom-1.5 right-3 text-[10px] sm:text-[12px] animate-pulse">❤️</div>
                 </div>
               </div>
               <div className="mt-3 space-y-1 flex flex-col items-center">
                 <h1 className="text-xl sm:text-3xl font-romantic text-rose-800 tracking-tight leading-none">
-                  Love<span className="font-script text-rose-500 drop-shadow-sm ml-1">Wordle</span>
+                  Love<span className="font-script text-rose-400 ml-1">Wordle</span>
                 </h1>
                 <div className="flex items-center justify-center gap-2 opacity-30 mt-1">
                   <div className="h-px w-4 bg-rose-200"></div>
-                  <p className="text-rose-400 font-medium tracking-[0.4em] text-[7px] sm:text-[8px] uppercase">Special Valentine's Edition</p>
+                  <p className="text-rose-400 font-medium tracking-[0.4em] text-[7px] sm:text-[8px] uppercase">Sweetheart Edition</p>
                   <div className="h-px w-4 bg-rose-200"></div>
                 </div>
               </div>
             </div>
           </header>
 
-          <main className="flex flex-col items-center justify-center w-full">
-            <div className="w-full max-w-[280px] sm:max-w-[320px]">
+          <main className="flex flex-col items-center justify-center w-full animate-float-soft">
+            <div className="w-full max-w-[280px] sm:max-w-[320px] bg-white p-4 rounded-[2.5rem] shadow-[0_20px_60px_-15px_rgba(159,18,57,0.06)] border border-rose-50">
               <WordleGrid 
                 guesses={stage === 'proposal-animating' ? getAnimatedWords() : guesses} 
                 currentGuess={stage === 'proposal-animating' ? '' : currentGuess} 
@@ -370,14 +368,14 @@ const App: React.FC = () => {
             
             <div className="h-10 flex items-center justify-center mt-3">
               {message && (
-                <div className="text-rose-600 text-[10px] sm:text-xs font-bold uppercase tracking-widest bg-white/95 px-4 py-2 rounded-full border border-rose-200 shadow-xl animate-fadeIn backdrop-blur-md text-center max-w-[240px]">
+                <div className="text-rose-600 text-[10px] sm:text-xs font-bold uppercase tracking-widest bg-white px-4 py-2 rounded-full border border-rose-100 shadow-xl animate-fadeIn backdrop-blur-md text-center max-w-[240px]">
                   {message}
                 </div>
               )}
             </div>
           </main>
 
-          <footer className="w-full max-w-md">
+          <footer className="w-full max-w-md animate-fadeIn" style={{ animationDelay: '0.4s' }}>
             <Keyboard 
               onKeyPress={onKeyPress} 
               guesses={guesses} 
