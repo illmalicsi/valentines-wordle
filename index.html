@@ -11,7 +11,7 @@
     <meta property="og:title" content="Valentine's Wordle">
     <meta property="og:description" content="A romantic puzzle for someone special. Guess the word to reveal a surprise.">
     <meta property="og:type" content="website">
-    <meta name="theme-color" content="#f43f5e">
+    <meta name="theme-color" content="#fff1f2">
 
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌹</text></svg>">
@@ -43,19 +43,29 @@
                     },
                     animation: {
                         'bounce-short': 'bounce 1.2s ease-in-out 2',
-                        'pop': 'pop 0.15s ease-out',
-                        'fadeIn': 'fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                        'spin-slow': 'spin 8s linear infinite',
+                        'pop': 'pop 0.1s ease-out',
+                        'fadeIn': 'fadeIn 0.5s ease-out forwards',
+                        'spin-slow': 'spin 12s linear infinite',
+                        'spin-reverse': 'spin-reverse 15s linear infinite',
+                        'float-soft': 'float-soft 3s ease-in-out infinite',
                     },
                     keyframes: {
                         pop: {
                             '0%': { transform: 'scale(1)' },
-                            '50%': { transform: 'scale(1.1)' },
+                            '50%': { transform: 'scale(1.05)' },
                             '100%': { transform: 'scale(1)' },
                         },
                         fadeIn: {
-                            from: { opacity: '0', transform: 'translateY(15px)' },
+                            from: { opacity: '0', transform: 'translateY(10px)' },
                             to: { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        'spin-reverse': {
+                            from: { transform: 'rotate(360deg)' },
+                            to: { transform: 'rotate(0deg)' },
+                        },
+                        'float-soft': {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
                         }
                     }
                 }
@@ -71,11 +81,10 @@
     <style>
         body {
             background-color: #fff5f7;
-            background-image: radial-gradient(#ffe4e9 1px, transparent 1px);
-            background-size: 30px 30px;
             min-height: 100vh;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            color: #4c0519;
         }
         #heart-container {
             position: fixed;
@@ -86,46 +95,61 @@
             pointer-events: none;
             z-index: 0;
         }
-        @keyframes float {
-            0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-            10% { opacity: 0.5; }
-            90% { opacity: 0.5; }
-            100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+        @keyframes floatWhimsical {
+            0% { transform: translateY(0) translateX(0) rotate(0deg) scale(1); opacity: 0; }
+            10% { opacity: 0.4; }
+            25% { transform: translateY(-25vh) translateX(20px) rotate(15deg) scale(1.1); }
+            50% { transform: translateY(-50vh) translateX(-20px) rotate(-15deg) scale(1); }
+            75% { transform: translateY(-75vh) translateX(15px) rotate(10deg) scale(1.15); }
+            90% { opacity: 0.4; }
+            100% { transform: translateY(-110vh) translateX(0) rotate(0deg) scale(1); opacity: 0; }
+        }
+        @keyframes floatDrift {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.3; }
+            33% { transform: translateY(-33vh) translateX(-30px) rotate(-20deg); }
+            66% { transform: translateY(-66vh) translateX(30px) rotate(20deg); }
+            90% { opacity: 0.3; }
+            100% { transform: translateY(-110vh) translateX(0) rotate(0deg); opacity: 0; }
         }
         .float-item {
             position: absolute;
-            bottom: -50px;
-            animation: float 12s linear infinite;
-            will-change: transform;
+            bottom: -60px;
+            will-change: transform, opacity;
         }
+        .float-whimsical { animation: floatWhimsical 18s ease-in-out infinite; }
+        .float-drift { animation: floatDrift 22s ease-in-out infinite; }
+
         .glass-card {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.7);
-            box-shadow: 0 10px 40px -10px rgba(244, 63, 94, 0.12);
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 182, 193, 0.3);
         }
         .stable-transform {
             backface-visibility: hidden;
             transform: translateZ(0);
         }
-        .floral-accent {
-            pointer-events: none;
-            opacity: 0.4;
+        .seal-text {
+            font-size: 8px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            font-weight: 700;
+            fill: #fb7185;
         }
     </style>
     <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react": "https://esm.sh/react@^19.2.4",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "vite": "https://esm.sh/vite@^7.3.1",
+        "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4"
+      }
+    }
+    </script>
 </head>
-<body class="antialiased text-rose-900 selection:bg-rose-200">
+<body class="antialiased selection:bg-rose-200">
     <div id="heart-container"></div>
     <div id="root" class="relative z-10"></div>
     <script type="module" src="/index.tsx"></script>

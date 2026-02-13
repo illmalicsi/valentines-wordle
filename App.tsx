@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { WordleGrid } from './components/WordleGrid';
 import { Keyboard } from './components/Keyboard';
@@ -18,51 +19,36 @@ const playSound = (type: 'tap' | 'success' | 'present' | 'absent' | 'win' | 'bac
   switch (type) {
     case 'tap':
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, now);
-      gain.gain.setValueAtTime(0.05, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+      osc.frequency.setValueAtTime(600, now);
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
       osc.start(now);
-      osc.stop(now + 0.1);
+      osc.stop(now + 0.05);
       break;
     case 'back':
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(440, now);
-      gain.gain.setValueAtTime(0.05, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+      osc.frequency.setValueAtTime(450, now);
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
       osc.start(now);
-      osc.stop(now + 0.1);
+      osc.stop(now + 0.05);
       break;
     case 'success':
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(523.25, now);
-      osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.2);
-      gain.gain.setValueAtTime(0.08, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523, now);
+      osc.frequency.exponentialRampToValueAtTime(783, now + 0.2);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
       osc.start(now);
       osc.stop(now + 0.3);
       break;
-    case 'win':
-      [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-        const o = ctx.createOscillator();
-        const g = ctx.createGain();
-        o.connect(g);
-        g.connect(ctx.destination);
-        o.type = 'sine';
-        o.frequency.setValueAtTime(freq, now + i * 0.1);
-        g.gain.setValueAtTime(0, now + i * 0.1);
-        g.gain.linearRampToValueAtTime(0.08, now + i * 0.1 + 0.05);
-        g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.5);
-        o.start(now + i * 0.1);
-        o.stop(now + i * 0.1 + 0.5);
-      });
-      break;
     case 'present':
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(330, now);
-      gain.gain.setValueAtTime(0.08, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(220, now);
+      gain.gain.setValueAtTime(0.03, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
       osc.start(now);
-      osc.stop(now + 0.2);
+      osc.stop(now + 0.1);
       break;
   }
 };
@@ -76,8 +62,6 @@ const App: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [animatingLettersCount, setAnimatingLettersCount] = useState(0);
 
-  const triggerChoice = useCallback(() => setStage('choice'), []);
-
   const resetGame = useCallback(() => {
     setGuesses([]);
     setCurrentGuess('');
@@ -86,61 +70,85 @@ const App: React.FC = () => {
     setStage('playing');
   }, []);
 
-  const startProposalAnimation = () => {
+  const startProposalAnimation = useCallback(() => {
     setStage('proposal-animating');
-    playSound('win');
     let count = 0;
     const totalLetters = PROPOSAL_WORDS.join('').length;
+    // Slower typing speed (100ms per character) for a romantic, readable pace
     const interval = setInterval(() => {
       count++;
       setAnimatingLettersCount(count);
       if (count >= totalLetters) {
         clearInterval(interval);
-        setTimeout(() => setStage('proposal-input'), 800);
+        // Pause at the end of the full sentence before transitioning to the input view
+        setTimeout(() => setStage('proposal-input'), 1500);
       }
-    }, 50);
-  };
+    }, 100);
+  }, []);
+
+  const triggerChoice = useCallback(() => setStage('choice'), []);
+
+  const handleRevealSecret = useCallback(() => {
+    setStage('playing'); 
+    setMessage(`The secret word was ${TARGET_WORD} ❤️`);
+    
+    // Show the word for 3 seconds so the user can actually read it
+    setTimeout(() => {
+      setMessage(null);
+      // Brief aesthetic pause before the final proposal animation starts
+      setTimeout(startProposalAnimation, 1000);
+    }, 3000);
+  }, [startProposalAnimation]);
+
+  const submitGuess = useCallback((guessToSubmit: string) => {
+    const upperGuess = guessToSubmit.toUpperCase();
+    
+    if (QUIT_PHRASES.some(phrase => upperGuess === phrase)) {
+      triggerChoice();
+      return;
+    }
+
+    if (upperGuess.length !== WORD_LENGTH) {
+      setMessage('Too short');
+      return;
+    }
+
+    const newGuesses = [...guesses, upperGuess];
+    setGuesses(newGuesses);
+    setCurrentGuess('');
+    
+    if (upperGuess === TARGET_WORD) {
+      playSound('success');
+      setTimeout(startProposalAnimation, 1500);
+    } else if (newGuesses.length >= MAX_ATTEMPTS) {
+      setTimeout(triggerChoice, 1200);
+    }
+  }, [guesses, triggerChoice, startProposalAnimation]);
 
   const onKeyPress = useCallback((key: string) => {
     if (stage !== 'playing') return;
     setMessage(null);
 
     if (key === 'ENTER') {
-      const upperGuess = currentGuess.toUpperCase();
-      if (QUIT_PHRASES.some(phrase => upperGuess === phrase)) {
-        triggerChoice();
-        return;
-      }
-      if (currentGuess.length !== WORD_LENGTH) {
-        setMessage('Too short, darling! 🌹');
-        playSound('present');
-        return;
-      }
-      const newGuesses = [...guesses, upperGuess];
-      setGuesses(newGuesses);
-      setCurrentGuess('');
-      
-      if (upperGuess === TARGET_WORD) {
-        playSound('success');
-        setTimeout(startProposalAnimation, 1000);
-      } else {
-        playSound('tap');
-        if (newGuesses.length >= MAX_ATTEMPTS) {
-          setTimeout(triggerChoice, 1000);
-        }
-      }
+      submitGuess(currentGuess);
     } else if (key === 'BACKSPACE') {
       if (currentGuess.length > 0) {
         playSound('back');
         setCurrentGuess(prev => prev.slice(0, -1));
       }
     } else if (/^[A-Z ]$/.test(key)) {
-      if (currentGuess.length < 5) {
+      if (currentGuess.length < WORD_LENGTH) {
+        const nextChar = key.toUpperCase();
+        const nextGuess = currentGuess + nextChar;
+        setCurrentGuess(nextGuess);
         playSound('tap');
-        setCurrentGuess(prev => (prev + key).toUpperCase());
+        
+        if (nextGuess.length === WORD_LENGTH) {
+          setTimeout(() => submitGuess(nextGuess), 400);
+        }
       }
     }
-  }, [currentGuess, guesses, stage, triggerChoice]);
+  }, [currentGuess, stage, submitGuess]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -157,19 +165,31 @@ const App: React.FC = () => {
   useEffect(() => {
     const container = document.getElementById('heart-container');
     if (!container) return;
-    const items = ['❤️', '🌸', '🌹', '✨'];
+    const items = ['❤️', '🌸', '✨', '🌹', '🧸'];
+    const animations = ['float-whimsical', 'float-drift'];
+
     const createItem = () => {
       const item = document.createElement('div');
-      item.className = 'float-item';
+      const randomAnim = animations[Math.floor(Math.random() * animations.length)];
+      item.className = `float-item ${randomAnim}`;
       item.innerHTML = items[Math.floor(Math.random() * items.length)];
+      
       item.style.left = Math.random() * 100 + 'vw';
-      item.style.fontSize = (Math.random() * 15 + 10) + 'px';
-      item.style.animationDuration = (Math.random() * 4 + 8) + 's';
-      item.style.opacity = (Math.random() * 0.3 + 0.1).toString();
+      item.style.fontSize = (Math.random() * 14 + 22) + 'px';
+      
+      const duration = (Math.random() * 10 + 15);
+      item.style.animationDuration = duration + 's';
+      item.style.animationDelay = (Math.random() * -20) + 's';
+      
+      item.style.opacity = (Math.random() * 0.15 + 0.05).toString();
+      
       container.appendChild(item);
-      setTimeout(() => item.remove(), 12000);
+      setTimeout(() => item.remove(), (duration + 5) * 1000);
     };
-    const interval = setInterval(createItem, 1000);
+
+    for(let i=0; i<12; i++) createItem();
+
+    const interval = setInterval(createItem, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -183,113 +203,86 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-start min-h-screen w-full px-2 py-4 sm:p-8 max-w-lg mx-auto relative overflow-y-auto overflow-x-hidden stable-transform">
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] w-full max-w-lg mx-auto stable-transform text-rose-900 px-4 py-8 overflow-hidden">
       {(stage === 'playing' || stage === 'proposal-animating') && (
-        <div className="flex flex-col items-center w-full animate-fadeIn">
-          {/* Header Section */}
-          <header className="mb-4 sm:mb-8 text-center flex flex-col items-center w-full relative">
-            {/* Floral Archway Background */}
-            <div className="absolute -top-6 left-0 right-0 flex justify-between px-4 opacity-30 pointer-events-none">
-              <span className="text-3xl animate-spin-slow">🌸</span>
-              <span className="text-3xl animate-spin-slow" style={{ animationDirection: 'reverse' }}>🌸</span>
-            </div>
-
-            {/* Boutique Seal Logo */}
-            <div className="relative mb-4 group cursor-default">
-              {/* Outer Golden Ring */}
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border border-rose-200/50 p-1 relative flex items-center justify-center animate-spin-slow" style={{ animationDuration: '20s' }}>
-                <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-rose-100/30 to-transparent animate-pulse"></div>
-                {/* Tiny Text on Path (Simplified) */}
-                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 text-[7px] uppercase tracking-[0.4em] text-rose-400 font-bold bg-[#fff5f7] px-2 z-10">FOR YOU</div>
-                <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 text-[7px] uppercase tracking-[0.4em] text-rose-400 font-bold bg-[#fff5f7] px-2 z-10">2025</div>
+        <div className="flex flex-col items-center justify-center w-full animate-fadeIn space-y-6 sm:space-y-8">
+          <header className="flex flex-col items-center w-full relative">
+            <div className="relative group cursor-default flex flex-col items-center">
+              <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center">
+                <div className="absolute inset-0 animate-spin-slow" style={{ animationDuration: '30s' }}>
+                  <svg className="w-full h-full" viewBox="0 0 100 100">
+                    <path id="circlePath" d="M 50, 50 m -37, 0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0" fill="transparent" />
+                    <text className="seal-text">
+                      <textPath xlinkHref="#circlePath">
+                        Love Wordle • Boutique Edition • 2025 •
+                      </textPath>
+                    </text>
+                  </svg>
+                </div>
+                <div className="absolute inset-2 border-2 border-dashed border-rose-200/40 rounded-full animate-spin-reverse" style={{ animationDuration: '45s' }}></div>
+                <div className="w-14 h-14 sm:w-18 sm:h-18 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full shadow-2xl flex items-center justify-center border border-white/30 transform transition-transform duration-500 relative z-10 overflow-hidden group-hover:scale-110">
+                   <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/20 to-transparent pointer-events-none"></div>
+                   <div className="flex items-baseline relative">
+                      <span className="text-white text-3xl sm:text-4xl font-romantic tracking-tighter drop-shadow-md select-none font-bold">L</span>
+                      <span className="text-rose-200 text-2xl sm:text-3xl font-romantic tracking-tighter drop-shadow-md select-none -ml-1 italic">W</span>
+                   </div>
+                   <div className="absolute bottom-1.5 right-3 text-[10px] sm:text-[12px] animate-pulse">❤️</div>
+                </div>
               </div>
-
-              {/* Inner Seal Content */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full shadow-lg flex items-center justify-center transform group-hover:scale-105 transition-transform duration-500 border border-white/20">
-                  <div className="flex items-center justify-center space-x-1 sm:space-x-2 relative">
-                    <span className="text-white text-3xl sm:text-4xl font-romantic tracking-tight drop-shadow-md select-none">L</span>
-                    <span className="text-white text-3xl sm:text-4xl font-romantic tracking-tight drop-shadow-md select-none">W</span>
-                    {/* Centered Small Heart Decoration */}
-                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2">
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white animate-pulse opacity-80">
-                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                      </svg>
-                    </div>
-                  </div>
+              <div className="mt-3 space-y-1 flex flex-col items-center">
+                <h1 className="text-xl sm:text-3xl font-romantic text-rose-800 tracking-tight leading-none">
+                  Love<span className="font-script text-rose-500 drop-shadow-sm ml-1">Wordle</span>
+                </h1>
+                <div className="flex items-center justify-center gap-2 opacity-30 mt-1">
+                  <div className="h-px w-4 bg-rose-200"></div>
+                  <p className="text-rose-400 font-medium tracking-[0.4em] text-[7px] sm:text-[8px] uppercase">Special Valentine's Edition</p>
+                  <div className="h-px w-4 bg-rose-200"></div>
                 </div>
               </div>
             </div>
-
-            {/* Logo Title */}
-            <h1 className="text-2xl sm:text-4xl font-romantic text-rose-800 tracking-tight leading-none">
-              Love<span className="font-script text-rose-500 drop-shadow-sm ml-1">Wordle</span>
-            </h1>
-            <div className="flex items-center gap-2 mt-2 opacity-50">
-              <div className="h-px w-6 bg-rose-200"></div>
-              <p className="text-rose-400 font-medium tracking-[0.5em] text-[8px] uppercase">Boutique Edition</p>
-              <div className="h-px w-6 bg-rose-200"></div>
-            </div>
           </header>
 
-          {/* Main Game Card */}
-          <div className="w-full glass-card p-4 sm:p-6 rounded-[2.5rem] mb-4 shadow-xl relative overflow-hidden border-rose-100/50">
-            {/* Elegant Floral Corners */}
-            <svg className="absolute -top-2 -right-2 w-20 h-20 text-rose-100/60 fill-current floral-accent" viewBox="0 0 100 100">
-              <path d="M80 0 Q 100 0 100 20 L 100 0 Z" />
-              <circle cx="90" cy="10" r="4" />
-              <circle cx="75" cy="5" r="2" />
-            </svg>
-            <svg className="absolute -bottom-2 -left-2 w-20 h-20 text-rose-100/60 fill-current floral-accent rotate-180" viewBox="0 0 100 100">
-              <path d="M80 0 Q 100 0 100 20 L 100 0 Z" />
-              <circle cx="90" cy="10" r="4" />
-              <circle cx="75" cy="5" r="2" />
-            </svg>
+          <main className="flex flex-col items-center justify-center w-full">
+            <div className="w-full max-w-[280px] sm:max-w-[320px]">
+              <WordleGrid 
+                guesses={stage === 'proposal-animating' ? getAnimatedWords() : guesses} 
+                currentGuess={stage === 'proposal-animating' ? '' : currentGuess} 
+                targetWord={TARGET_WORD} 
+                maxAttempts={MAX_ATTEMPTS}
+                isMessageMode={stage === 'proposal-animating'}
+              />
+            </div>
+            
+            <div className="h-10 flex items-center justify-center mt-3">
+              {message && (
+                <div className="text-rose-600 text-[10px] sm:text-xs font-bold uppercase tracking-widest bg-white/95 px-4 py-2 rounded-full border border-rose-200 shadow-xl animate-fadeIn backdrop-blur-md text-center max-w-[240px]">
+                  {message}
+                </div>
+              )}
+            </div>
+          </main>
 
-            <WordleGrid 
-              guesses={stage === 'proposal-animating' ? getAnimatedWords() : guesses} 
-              currentGuess={stage === 'proposal-animating' ? '' : currentGuess} 
-              targetWord={TARGET_WORD} 
-              maxAttempts={MAX_ATTEMPTS}
-              isMessageMode={stage === 'proposal-animating'}
-            />
-          </div>
-
-          <div className="h-6 flex items-center justify-center mb-2">
-            {message && stage === 'playing' && (
-              <div className="text-rose-600 text-[10px] font-bold uppercase tracking-widest bg-white/80 px-4 py-1 rounded-full border border-rose-100 shadow-sm backdrop-blur-sm">
-                {message}
-              </div>
-            )}
-          </div>
-
-          <div className="w-full mt-auto">
+          <footer className="w-full max-w-md">
             <Keyboard 
               onKeyPress={onKeyPress} 
               guesses={guesses} 
               targetWord={TARGET_WORD} 
-              disabled={stage !== 'playing'}
+              disabled={stage !== 'playing' || !!message}
             />
-          </div>
+          </footer>
         </div>
       )}
 
       {stage === 'choice' && (
-        <div className="flex items-center justify-center min-h-[70vh] w-full px-4">
-          <ChoiceView 
-            onContinue={() => setStage('playing')} 
-            onGiveUp={startProposalAnimation} 
-          />
+        <div className="flex items-center justify-center w-full animate-fadeIn">
+          <ChoiceView onContinue={resetGame} onGiveUp={handleRevealSecret} />
         </div>
       )}
 
       {stage === 'proposal-input' && (
-        <div className="flex items-center justify-center min-h-[80vh] w-full px-4">
+        <div className="flex items-center justify-center w-full animate-fadeIn">
           <ProposalView 
-            onAccepted={() => {
-              playSound('win');
-              setStage('celebration');
-            }} 
+            onAccepted={() => setStage('celebration')} 
             guesses={[]} 
             targetWord={TARGET_WORD}
             onSoundRequest={playSound}
@@ -298,7 +291,7 @@ const App: React.FC = () => {
       )}
 
       {stage === 'celebration' && (
-        <div className="flex items-center justify-center min-h-[80vh] w-full px-4">
+        <div className="flex items-center justify-center w-full animate-fadeIn">
           <CelebrationView onReset={resetGame} />
         </div>
       )}

@@ -20,7 +20,7 @@ export const WordleGrid: React.FC<WordleGridProps> = ({
   const rows = Array.from({ length: maxAttempts });
 
   return (
-    <div className={`flex flex-col gap-1.5 sm:gap-2.5 stable-transform w-full ${isMessageMode ? 'items-center' : ''}`}>
+    <div className="flex flex-col gap-1 sm:gap-1.5 w-full max-w-[260px] sm:max-w-[320px] mx-auto">
       {rows.map((_, i) => (
         <Row 
           key={i} 
@@ -28,6 +28,7 @@ export const WordleGrid: React.FC<WordleGridProps> = ({
           isFinal={isMessageMode || i < guesses.length}
           targetWord={targetWord}
           isMessageMode={isMessageMode}
+          isActiveRow={i === guesses.length && !isMessageMode}
         />
       ))}
     </div>
@@ -39,11 +40,12 @@ const Row: React.FC<{
   isFinal: boolean; 
   targetWord: string;
   isMessageMode: boolean;
-}> = ({ guess, isFinal, targetWord, isMessageMode }) => {
+  isActiveRow: boolean;
+}> = ({ guess, isFinal, targetWord, isMessageMode, isActiveRow }) => {
   const cells = Array.from({ length: 5 });
 
   return (
-    <div className="flex gap-1.5 sm:gap-2.5 justify-center w-full">
+    <div className="grid grid-cols-5 gap-1 sm:gap-1.5 w-full">
       {cells.map((_, i) => {
         let status: LetterStatus = 'empty';
         const char = guess[i] || '';
@@ -56,33 +58,37 @@ const Row: React.FC<{
           else status = 'absent';
         }
 
-        return <Cell key={i} char={char} status={status} isMessageMode={isMessageMode} />;
+        return <Cell key={i} char={char} status={status} isMessageMode={isMessageMode} isCurrentCell={isActiveRow && i === guess.length} />;
       })}
     </div>
   );
 };
 
-const Cell: React.FC<{ char: string; status: LetterStatus; isMessageMode?: boolean }> = ({ char, status, isMessageMode }) => {
-  let style = "bg-white border-rose-100 text-rose-800";
+const Cell: React.FC<{ char: string; status: LetterStatus; isMessageMode?: boolean; isCurrentCell?: boolean }> = ({ char, status, isMessageMode, isCurrentCell }) => {
+  let style = "bg-transparent border-rose-200 text-rose-900";
   
   if (isMessageMode) {
     if (char && char !== ' ') {
-      style = "bg-rose-500 border-rose-600 text-white shadow-sm scale-105";
+      // Final proposal letters remain deep rose for the romantic feel
+      style = "bg-rose-600 border-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.3)] scale-105";
     } else {
-      style = "bg-transparent border-transparent opacity-0";
+      style = "opacity-0";
     }
   } else if (status === 'correct') {
-    style = "bg-rose-500 border-rose-600 text-white";
+    // Correct Wordle guesses now use standard emerald green
+    style = "bg-emerald-600 border-emerald-600 text-white shadow-sm";
   } else if (status === 'present') {
-    style = "bg-amber-100 border-amber-300 text-amber-800";
+    style = "bg-amber-400 border-amber-400 text-white shadow-sm";
   } else if (status === 'absent') {
-    style = "bg-slate-50 border-slate-200 text-slate-300 opacity-50";
+    style = "bg-rose-100 border-rose-100 text-rose-300";
   } else if (char) {
-    style = "bg-white border-rose-300 text-rose-900 animate-pop border-2";
+    style = "bg-white border-rose-400 text-rose-900 animate-pop shadow-inner";
+  } else if (isCurrentCell) {
+    style = "bg-white border-rose-500 ring-4 ring-rose-100/50 shadow-[0_0_15px_rgba(225,29,72,0.15)] animate-pulse";
   }
 
   return (
-    <div className={`w-11 h-11 sm:w-14 sm:h-14 border rounded-lg sm:rounded-xl flex items-center justify-center font-bold text-lg sm:text-2xl transition-all duration-300 transform-gpu ${style} stable-transform flex-shrink-0 aspect-square select-none uppercase`}>
+    <div className={`aspect-square w-full border-2 rounded-lg flex items-center justify-center font-bold text-base sm:text-2xl transition-all duration-300 transform-gpu ${style} select-none uppercase`}>
       {char}
     </div>
   );
