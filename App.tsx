@@ -5,6 +5,7 @@ import { Keyboard } from './components/Keyboard';
 import { ChoiceView } from './components/ChoiceView';
 import { ProposalView } from './components/ProposalView';
 import { CelebrationView } from './components/CelebrationView';
+import { HowToPlay } from './components/HowToPlay';
 import { TARGET_WORD, MAX_ATTEMPTS, WORD_LENGTH, QUIT_PHRASES } from './constants';
 import { AppStage } from './types';
 
@@ -85,6 +86,7 @@ const App: React.FC = () => {
   const [currentGuess, setCurrentGuess] = useState<string>('');
   const [message, setMessage] = useState<string | null>(null);
   const [animatingLettersCount, setAnimatingLettersCount] = useState(0);
+  const [showHowToPlay, setShowHowToPlay] = useState(false);
   
   // Track submission to prevent double-submit during auto-check window
   const isSubmitting = useRef(false);
@@ -130,7 +132,6 @@ const App: React.FC = () => {
     
     const upperGuess = guessToSubmit.toUpperCase();
     
-    // Allow quit phrases even if they don't match WORD_LENGTH (handled by manual Enter usually)
     if (QUIT_PHRASES.some(phrase => upperGuess === phrase)) {
       triggerChoice();
       return;
@@ -183,23 +184,17 @@ const App: React.FC = () => {
         setCurrentGuess(prev => prev.slice(0, -1));
       }
     } else if (/^[A-Z ]$/.test(key)) {
-      // Allow typing a bit more for QUIT_PHRASES if needed, 
-      // but standard auto-submit triggers at WORD_LENGTH
       if (currentGuess.length < 10) { 
         const nextChar = key.toUpperCase();
         const nextGuess = currentGuess + nextChar;
         setCurrentGuess(nextGuess);
         playSound('tap');
         
-        // AUTO-SUBMIT LOGIC
         if (nextGuess.length === WORD_LENGTH) {
-          // Check if it's a part of a quit phrase before auto-submitting
           const isPartOfQuit = QUIT_PHRASES.some(phrase => phrase.startsWith(nextGuess));
           
-          // If it's not looking like a quit phrase, auto-submit
           if (!isPartOfQuit) {
             setTimeout(() => {
-              // Re-check current state to ensure backspace wasn't pressed during delay
               setCurrentGuess(prev => {
                 if (prev.length === WORD_LENGTH) {
                   submitGuess(prev);
@@ -267,6 +262,20 @@ const App: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[100dvh] w-full max-w-lg mx-auto stable-transform text-rose-900 px-4 py-8 overflow-hidden">
+      {/* Help Icon Button */}
+      {(stage === 'playing') && (
+        <button 
+          onClick={() => setShowHowToPlay(true)}
+          className="fixed top-6 right-6 w-10 h-10 bg-white/80 backdrop-blur-sm border border-rose-100 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all text-rose-400 hover:text-rose-600 z-40 group cursor-pointer"
+          title="How to play"
+        >
+          <span className="text-xl font-bold">?</span>
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-rose-500 rounded-full animate-pulse opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </button>
+      )}
+
+      {showHowToPlay && <HowToPlay onClose={() => setShowHowToPlay(false)} />}
+
       {(stage === 'playing' || stage === 'proposal-animating') && (
         <div className="flex flex-col items-center justify-center w-full animate-fadeIn space-y-6 sm:space-y-8">
           <header className="flex flex-col items-center w-full relative">
