@@ -6,7 +6,7 @@ interface CelebrationViewProps {
 }
 
 export const CelebrationView: React.FC<CelebrationViewProps> = ({ onReset }) => {
-  // NOTE: Replace this placeholder URL with your actual Google Form or invitation link
+  // Use the provided invitation link
   const INVITATION_URL = "https://forms.gle/RXj4wwr5QpSvD5ZAA";
 
   return (
