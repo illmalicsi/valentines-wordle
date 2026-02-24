@@ -6,7 +6,7 @@ import { ChoiceView } from './components/ChoiceView';
 import { ProposalView } from './components/ProposalView';
 import { CelebrationView } from './components/CelebrationView';
 import { HowToPlay } from './components/HowToPlay';
-import { TARGET_WORD, MAX_ATTEMPTS, WORD_LENGTH, QUIT_PHRASES } from './constants';
+import { MAX_ATTEMPTS, WORD_LENGTH, QUIT_PHRASES, getRandomWord } from './constants';
 import { AppStage } from './types';
 import { GoogleGenAI } from "@google/genai";
 
@@ -91,6 +91,7 @@ const PROPOSAL_WORDS = ["WILL ", "YOU  ", "BE   ", "MY   ", "VALEN", "TINE?"];
 
 const App: React.FC = () => {
   const [stage, setStage] = useState<AppStage>('playing');
+  const [targetWord, setTargetWord] = useState(getRandomWord());
   const [guesses, setGuesses] = useState<string[]>([]);
   const [currentGuess, setCurrentGuess] = useState<string>('');
   const [message, setMessage] = useState<string | null>(null);
@@ -98,7 +99,7 @@ const App: React.FC = () => {
   const [showHowToPlay, setShowHowToPlay] = useState(false);
   
   const isSubmitting = useRef(false);
-  const wordCache = useRef<Record<string, boolean>>({ [TARGET_WORD]: true });
+  const wordCache = useRef<Record<string, boolean>>({ [targetWord]: true });
 
   const validateWord = async (word: string): Promise<boolean> => {
     if (wordCache.current[word] !== undefined) return wordCache.current[word];
@@ -122,12 +123,15 @@ const App: React.FC = () => {
   };
 
   const resetGame = useCallback(() => {
+    const newWord = getRandomWord();
+    setTargetWord(newWord);
     setGuesses([]);
     setCurrentGuess('');
     setMessage(null);
     setAnimatingLettersCount(0);
     setStage('playing');
     isSubmitting.current = false;
+    wordCache.current = { [newWord]: true };
   }, []);
 
   const startProposalAnimation = useCallback(() => {
@@ -149,13 +153,13 @@ const App: React.FC = () => {
 
   const handleRevealSecret = useCallback(() => {
     setStage('playing'); 
-    setMessage(`The secret word was ${TARGET_WORD} ❤️`);
+    setMessage(`The secret word was ${targetWord} ❤️`);
     
     setTimeout(() => {
       setMessage(null);
       setTimeout(startProposalAnimation, 1000);
     }, 3000);
-  }, [startProposalAnimation]);
+  }, [startProposalAnimation, targetWord]);
 
   const submitGuess = useCallback(async (guessToSubmit: string) => {
     if (!guessToSubmit || isSubmitting.current) return;
@@ -191,8 +195,8 @@ const App: React.FC = () => {
     
     upperGuess.split('').forEach((char, i) => {
       setTimeout(() => {
-        if (char === TARGET_WORD[i]) playSound('correct');
-        else if (TARGET_WORD.includes(char)) playSound('present');
+        if (char === targetWord[i]) playSound('correct');
+        else if (targetWord.includes(char)) playSound('present');
         else playSound('absent');
       }, i * 200 + 300);
     });
@@ -201,7 +205,7 @@ const App: React.FC = () => {
     setGuesses(newGuesses);
     setCurrentGuess('');
     
-    const isWin = upperGuess === TARGET_WORD;
+    const isWin = upperGuess === targetWord;
     const isGameOver = newGuesses.length >= MAX_ATTEMPTS;
 
     setTimeout(() => {
@@ -214,7 +218,7 @@ const App: React.FC = () => {
       }
     }, WORD_LENGTH * 200 + 400);
 
-  }, [guesses, triggerChoice, startProposalAnimation]);
+  }, [guesses, triggerChoice, startProposalAnimation, targetWord]);
 
   const onKeyPress = useCallback((key: string) => {
     if (stage !== 'playing' || isSubmitting.current) return;
@@ -360,7 +364,7 @@ const App: React.FC = () => {
               <WordleGrid 
                 guesses={stage === 'proposal-animating' ? getAnimatedWords() : guesses} 
                 currentGuess={stage === 'proposal-animating' ? '' : currentGuess} 
-                targetWord={TARGET_WORD} 
+                targetWord={targetWord} 
                 maxAttempts={MAX_ATTEMPTS}
                 isMessageMode={stage === 'proposal-animating'}
               />
@@ -379,7 +383,7 @@ const App: React.FC = () => {
             <Keyboard 
               onKeyPress={onKeyPress} 
               guesses={guesses} 
-              targetWord={TARGET_WORD} 
+              targetWord={targetWord} 
               disabled={stage !== 'playing' || (!!message && message !== 'Checking word...')}
             />
           </footer>
@@ -397,7 +401,7 @@ const App: React.FC = () => {
           <ProposalView 
             onAccepted={() => setStage('celebration')} 
             guesses={[]} 
-            targetWord={TARGET_WORD}
+            targetWord={targetWord}
             onSoundRequest={playSound}
           />
         </div>
